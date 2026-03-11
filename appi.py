@@ -16,7 +16,6 @@ from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-# Rekisteröi DejaVu Sans – täysi Unicode-tuki ÅÄÖ mukaan lukien
 _DJVU_REG = False
 def _register_fonts():
     global _DJVU_REG
@@ -33,14 +32,8 @@ def _register_fonts():
 def _font(bold=False):
     return "DJV-B" if (bold and _DJVU_REG) else ("Helvetica-Bold" if bold else ("DJV" if _DJVU_REG else "Helvetica"))
 
-# -------------------------------------------------
-# PAGE SETTINGS
-# -------------------------------------------------
 st.set_page_config(page_title="Sustaina", layout="wide", initial_sidebar_state="collapsed")
 
-# -------------------------------------------------
-# BACKGROUND
-# -------------------------------------------------
 def get_base64(file_path):
     try:
         with open(file_path, "rb") as f:
@@ -101,9 +94,6 @@ li[role="option"]:hover {{ background-color: #333 !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------
-# HEADER – pelkkä teksti, ei logo-riippuvuutta
-# -------------------------------------------------
 st.markdown("""
 <div style="padding: 8px 0 20px 0; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 16px;">
     <h1 style="margin:0 0 4px 0; font-size:2.2rem; letter-spacing:-0.5px;">Sustaina</h1>
@@ -113,11 +103,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------
-# PAASTOKERTOIMET – ajantasaiset, lähdeviitatut
-# -------------------------------------------------
-# Liikenne: EMEP/EEA Guidebook 2023 & UK DESNZ GHG Conversion Factors 2024
-# (VTT LIPASTO poistunut kaytosta 2023 – Tilastokeskus LIIKE korvaa)
 EMISSION_FACTORS = {
     "car_bensa":  0.170,   # Bensiiniauto Euro 6 ka., EMEP/EEA 2023
     "car_diesel": 0.195,   # Diesel-auto Euro 6 ka., EMEP/EEA 2023
@@ -143,7 +128,6 @@ EMISSION_FACTORS = {
     "purchased_goods":0.50,    # Ostetut tavarat/palvelut kg CO2e/€ – Exiobase / EEIO-kerroin (ka.)
 }
 
-# Lammitys kg CO2e/kWh – Motiva.fi / Tilastokeskus (paivitetty 2024)
 HEATING_FACTORS = {
     "Kaukolämpö (Suomen ka.)": 0.130,  # Motiva/Tilastokeskus 3v ka. 2021-2023 = 130 g CO2/kWh (energiamenetelmä)
     "Kevyt polttoöljy":         0.267,  # Tilastokeskus polttoaineluokitus
@@ -210,9 +194,6 @@ INDUSTRY_DEFAULTS = {
     },
 }
 
-# -------------------------------------------------
-# DATA FETCHING
-# -------------------------------------------------
 @st.cache_data
 def get_finland_emission_trend():
     url = "https://pxdata.stat.fi/PXWeb/api/v1/fi/StatFin/khki/statfin_khki_pxt_11ic.px"
@@ -247,9 +228,6 @@ def get_current_temperature():
     except:
         return None
 
-# -------------------------------------------------
-# APP STATE
-# -------------------------------------------------
 pages = ["Yritysinfo", "Toimitilat", "Liikkuminen", "Jatteet", "Scope 3", "Yhteenveto"]
 
 for key, default in [
@@ -276,9 +254,6 @@ current_page = pages[st.session_state.page_index]
 st.progress((st.session_state.page_index + 1) / len(pages))
 st.caption(f"Vaihe {st.session_state.page_index + 1} / {len(pages)}")
 
-# -------------------------------------------------
-# LASKENTA
-# -------------------------------------------------
 def calculate_emissions(data, electric_factor):
     hf = data.get("heating_factor", list(HEATING_FACTORS.values())[0])
     return_dict = {
@@ -336,9 +311,6 @@ def suggest_savings(emissions, employees):
         tips.append("IT-laitteet: pidennä laitteiden elinkaarta – uuden kannettavan hiilijalanjälki on ~300 kg CO2e")
     return tips
 
-# -------------------------------------------------
-# PDF-RAPORTTI – siisti, ei erikoismerkkeja
-# -------------------------------------------------
 def generate_pdf_report(data, emissions, total, employees, company_name, industry, scenario):
     _register_fonts()
     buffer = io.BytesIO()
@@ -400,7 +372,6 @@ def generate_pdf_report(data, emissions, total, employees, company_name, industr
     story.append(tm)
     story.append(Spacer(1, 14))
 
-    # Yhteenveto
     story.append(Paragraph("Yhteenveto", styles["h2"]))
     per_person = total / max(employees, 1)
     tonnes     = total / 1000
@@ -426,7 +397,6 @@ def generate_pdf_report(data, emissions, total, employees, company_name, industr
     story.append(ts)
     story.append(Spacer(1, 14))
 
-    # Kategoriat
     story.append(Paragraph("Päästöt kategorioittain", styles["h2"]))
     bd = [["Kategoria", "Scope", "kg CO2e", "Osuus (%)", "Per hlö (kg)"]]
     for cat, val in sorted(emissions.items(), key=lambda x: -x[1]):
@@ -448,7 +418,6 @@ def generate_pdf_report(data, emissions, total, employees, company_name, industr
     story.append(tb)
     story.append(Spacer(1, 14))
 
-    # Säästösuositukset
     tips = suggest_savings(emissions, employees)
     if tips:
         story.append(Paragraph("Säästösuositukset", styles["h2"]))
@@ -456,7 +425,6 @@ def generate_pdf_report(data, emissions, total, employees, company_name, industr
             story.append(Paragraph(f"  \u2022  {t}", styles["bullet"]))
         story.append(Spacer(1, 10))
 
-    # Käytetyt kertoimet
     story.append(Paragraph("Käytetyt päästökertoimet", styles["h2"]))
     ef_rows = [["Kategoria", "Kerroin", "Yksikkö", "Lähde"]] + [
         ("Bensa-auto",         "0.170", "kg CO2e/km",  "EMEP/EEA Guidebook 2023"),
@@ -487,7 +455,6 @@ def generate_pdf_report(data, emissions, total, employees, company_name, industr
     story.append(tef)
     story.append(Spacer(1, 16))
 
-    # Lähteet
     story.append(HRFlowable(width="100%", thickness=0.5,
                              color=colors.HexColor("#cccccc"), spaceAfter=8))
     story.append(Paragraph("Lähteet", styles["h2"]))
@@ -522,10 +489,6 @@ def generate_pdf_report(data, emissions, total, employees, company_name, industr
     doc.build(story)
     buffer.seek(0)
     return buffer
-
-# =====================================================================
-# SIVUT
-# =====================================================================
 
 if current_page == "Yritysinfo":
     st.header("Yrityksen perustiedot")
@@ -691,7 +654,6 @@ elif current_page == "Scope 3":
         help="Exiobase / EEIO toimialan keskikerroin. Tarkempi laskenta vaatii toimittajakohtaiset tiedot."
     )
 
-    # Näytetään reaaliaikainen esikatselutulos
     s3_total = (
         commute_car    * EMISSION_FACTORS["commute_car"] +
         commute_pt     * EMISSION_FACTORS["commute_pt"] +
