@@ -98,7 +98,7 @@ st.markdown("""
 <div style="padding: 8px 0 20px 0; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 16px;">
     <h1 style="margin:0 0 4px 0; font-size:2.2rem; letter-spacing:-0.5px;">Sustaina</h1>
     <p style="margin:0; opacity:0.65; font-size:0.95rem;">
-        Yrityksen hiilijalanjälkilaskuri &ndash; GHG Protocol Scope 1, 2 &amp; 3
+        Laske yrityksesi hiilijalanjälki minuutissa! &ndash; GHG Protocol Scope 1, 2 &amp; 3
     </p>
 </div>
 """, unsafe_allow_html=True)
